@@ -1,0 +1,18 @@
+{
+  "name": "restor-octo-giggle-driver",
+  "version": "0.1.0",
+  "description": "JavaScript driver library for restor-octo-giggle transport bus",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "example": "node example.js"
+  },
+  "keywords": [
+    "transport",
+    "tcp",
+    "bus",
+    "driver"
+  ],
+  "author": "",
+  "license": "MIT"
+}
