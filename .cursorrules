@@ -1,0 +1,206 @@
+# JavaScript Driver - Cursor Rules
+
+## Project Context
+
+This is the **JavaScript driver** for the restor-octo-giggle transport bus. It's a **client library** that enables Node.js applications to interact with the Rust transport server.
+
+## Purpose
+
+The JavaScript driver provides:
+- **Producer functionality** - Send messages to the transport bus
+- **Consumer functionality** - Listen for specific event messages
+- **Registration support** - Register as a consumer for event routing
+- **Protocol abstraction** - TCP client implementation (extensible)
+
+## Architecture
+
+### Core Components
+
+1. **Driver** (`src/driver.js`) - Main driver class
+   - Message sending (producer mode)
+   - Event listening (consumer mode)
+   - Configuration management
+
+2. **Protocols** (`src/protocols/`) - Transport protocol implementations
+   - TCP protocol (`tcp.js`)
+   - Extensible for future protocols (UDP, WebSocket)
+
+3. **Event Listener** (`src/event-listener.js`) - Event message consumption
+   - Listen for specific events
+   - Filter messages by event name
+   - Auto-reconnection support
+
+4. **Registration Client** (`src/registration-client.js`) - Consumer registration
+   - Register with registration server
+   - Subscribe/unsubscribe to events
+   - Runtime event management
+
+5. **Message Utilities** (`src/message.js`) - Message parsing
+   - JSON format parsing
+   - Simple format parsing
+   - Event message creation
+
+## Key Design Principles
+
+1. **Zero Dependencies** - Use only Node.js built-in modules
+2. **ES Modules** - Modern JavaScript (ES6+)
+3. **Simple API** - Easy to use and integrate
+4. **Error Handling** - Graceful error handling and recovery
+5. **Event-Driven** - Support for event-based message consumption
+
+## File Structure
+
+```
+drivers/js/
+├── src/
+│   ├── driver.js              # Main driver class
+│   ├── config.js              # Configuration
+│   ├── event-listener.js      # Event listener
+│   ├── registration-client.js # Registration client
+│   ├── message.js             # Message utilities
+│   ├── protocol-factory.js    # Protocol factory
+│   ├── protocols/
+│   │   ├── tcp.js            # TCP protocol
+│   │   └── index.js          # Protocol exports
+│   └── index.js              # Main entry point
+├── docs/                      # Documentation
+│   ├── README.md             # Main documentation
+│   ├── DOCUMENTATION.md      # Detailed API docs
+│   ├── README_TESTING.md     # Testing guide
+│   └── QUICK_START_TEST.md  # Quick test guide
+├── example.js                # Basic usage example
+├── example-event-listener.js # Event listener example
+└── test-consumer-producer.js # Integration tests
+```
+
+## Development Guidelines
+
+### Code Style
+
+- Use ES6+ features (async/await, arrow functions, destructuring)
+- Follow Node.js conventions
+- Use meaningful variable and function names
+- Add JSDoc comments for public APIs
+- Keep functions small and focused
+
+### Error Handling
+
+- Always handle network errors gracefully
+- Provide clear error messages
+- Support reconnection for persistent connections
+- Use try-catch for async operations
+- Return meaningful error objects
+
+### Testing
+
+- Write integration tests for all features
+- Test error scenarios
+- Test reconnection logic
+- Test event filtering
+- Keep tests simple and readable
+
+### Dependencies
+
+- **NO external dependencies** - Use only Node.js built-in modules
+- Prefer `net` module for TCP
+- Use `events` if needed for event emitters
+- Avoid npm packages unless absolutely necessary
+
+## API Patterns
+
+### Driver Creation
+
+```javascript
+// Default config
+const driver = Driver.create();
+
+// From address
+const driver = Driver.fromAddress('127.0.0.1:49152');
+
+// Full config
+const driver = Driver.withConfig({
+    protocol: ProtocolType.TCP,
+    host: '127.0.0.1',
+    port: 49152
+});
+```
+
+### Message Sending
+
+```javascript
+// Simple message
+await driver.send('Hello!');
+
+// Event message (JSON)
+await driver.send(JSON.stringify({
+    msg: 'User logged in',
+    event_name: 'user_login'
+}));
+
+// Simple format
+await driver.send('user_login:User logged in');
+```
+
+### Event Listening
+
+```javascript
+// Start listener
+await driver.startEventListener('127.0.0.1:9000', {
+    registrationAddress: '127.0.0.1:49153',
+    consumerId: 'my-consumer',
+    events: ['user_login', 'order_created']
+});
+
+// Listen for events
+driver.on('user_login', (message, eventMessage) => {
+    console.log('Event:', message);
+});
+
+// Wildcard listener
+driver.on('*', (message, eventMessage) => {
+    console.log('Any event:', eventMessage.event_name);
+});
+```
+
+## Important Notes for AI Agents
+
+1. **This is a client library** - Not a server, designed to connect to Rust server
+2. **Zero dependencies** - Do not add npm packages without strong justification
+3. **ES Modules only** - Use `import/export`, not `require/module.exports`
+4. **Cross-platform** - Must work on Windows, Linux, macOS
+5. **Error resilience** - Handle network failures gracefully
+6. **API consistency** - Maintain consistent API across methods
+7. **Documentation** - Update docs when changing APIs
+
+## Common Tasks
+
+- Adding new protocol implementations
+- Improving error handling
+- Adding new event listener features
+- Performance optimization
+- Adding examples
+- Writing tests
+
+## Testing
+
+- Run tests: `node test-consumer-producer.js`
+- Test with server: Start Rust server first
+- Integration tests: Test full message flow
+- Error tests: Test connection failures
+
+## When Making Changes
+
+1. **Update documentation** - Keep docs in `docs/` folder
+2. **Add examples** - Update example files if API changes
+3. **Test thoroughly** - Test on different platforms
+4. **Maintain API compatibility** - Don't break existing code
+5. **Follow patterns** - Use existing code patterns
+
+## Questions to Consider
+
+- Does this add external dependencies? (Should be avoided)
+- Is this cross-platform compatible?
+- Does this maintain API consistency?
+- Is error handling appropriate?
+- Are there examples for this feature?
+- Is documentation updated?

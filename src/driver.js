@@ -1,8 +1,11 @@
 import { DriverConfig, ProtocolType, DEFAULT_CONFIG } from './config.js';
 import { ProtocolFactory } from './protocol-factory.js';
+import { EventListener } from './event-listener.js';
+import { RegistrationClient } from './registration-client.js';
 
 /**
  * Driver class that encapsulates protocol and sends messages to the bus
+ * Also supports event listening for consuming specific event messages
  */
 export class Driver {
     /**
@@ -18,6 +21,7 @@ export class Driver {
         this.config = config;
         this.protocol = null;
         this._initialized = false;
+        this.eventListener = null;
     }
 
     /**
@@ -103,6 +107,87 @@ export class Driver {
      */
     isInitialized() {
         return this._initialized;
+    }
+
+    /**
+     * Start listening for events
+     * @param {string|object} listenerConfig - Listener config (address string or config object)
+     * @param {object} registrationConfig - Registration config (optional)
+     * @returns {Promise<EventListener>}
+     */
+    async startEventListener(listenerConfig = null, registrationConfig = null) {
+        // If registration config provided, register as consumer first
+        if (registrationConfig) {
+            const regClient = new RegistrationClient(
+                registrationConfig.registrationAddress || `${this.config.host}:49153`,
+                registrationConfig.consumerAddress || `${this.config.host}:${this.config.port + 1}`
+            );
+            
+            const consumerId = registrationConfig.consumerId || `js-consumer-${Date.now()}`;
+            const events = registrationConfig.events || [];
+            
+            await regClient.register(consumerId, events);
+            console.log(`[Driver] Registered as consumer '${consumerId}' for events:`, events);
+        }
+
+        // Setup listener
+        if (!listenerConfig) {
+            // Use same config as driver, but different port
+            listenerConfig = {
+                host: this.config.host,
+                port: this.config.port + 1, // Default to port + 1 for listener
+            };
+        } else if (typeof listenerConfig === 'string') {
+            // Parse address string
+            const [host, port] = listenerConfig.split(':');
+            listenerConfig = { host, port: parseInt(port) };
+        }
+
+        this.eventListener = new EventListener(listenerConfig);
+        await this.eventListener.start();
+        return this.eventListener;
+    }
+
+    /**
+     * Stop event listener
+     */
+    stopEventListener() {
+        if (this.eventListener) {
+            this.eventListener.stop();
+            this.eventListener = null;
+        }
+    }
+
+    /**
+     * Register event listener callback
+     * @param {string} eventName - Event name to listen for ('*' for all events)
+     * @param {Function} callback - Callback function (message, eventMessage) => void
+     * @returns {Function} Unsubscribe function
+     */
+    on(eventName, callback) {
+        if (!this.eventListener) {
+            throw new Error('Event listener not started. Call startEventListener() first.');
+        }
+        return this.eventListener.on(eventName, callback);
+    }
+
+    /**
+     * Remove event listener
+     * @param {string} eventName - Event name
+     * @param {Function} callback - Callback function
+     */
+    off(eventName, callback) {
+        if (this.eventListener) {
+            this.eventListener.off(eventName, callback);
+        }
+    }
+
+    /**
+     * Get event listener instance
+     * @returns {EventListener|null}
+     */
+    getEventListener() {
+        return this.eventListener;
     }
 
     /**

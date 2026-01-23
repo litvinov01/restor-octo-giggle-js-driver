@@ -1,365 +1,74 @@
-# restor-octo-giggle Driver
+# restor-octo-giggle JavaScript Driver
 
-JavaScript driver library for sending messages to the restor-octo-giggle transport bus. This library provides protocol encapsulation similar to the Rust server implementation.
-
-## Features
-
-- 🔌 **Protocol Encapsulation**: Transport protocols are fully encapsulated and interchangeable
-- 📨 **Simple API**: Easy-to-use interface for sending messages
-- 🚀 **Minimal Dependencies**: Uses only Node.js built-in modules (no external dependencies)
-- 🔧 **Extensible Design**: Easy to add new transport protocols
-- ⚙️ **Configurable**: Support for custom addresses and protocols
-
-## Installation
-
-No installation required if using Node.js built-in modules. Just import the driver:
-
-```javascript
-import Driver from './src/index.js';
-```
-
-Or if you want to use it as a package, ensure you have Node.js 14+ and ES modules support.
+JavaScript driver library for the restor-octo-giggle transport bus. This driver allows you to send messages to the Rust transport server and listen for specific event messages.
 
 ## Quick Start
 
-### Basic Usage
+### Installation
+
+```bash
+npm install
+```
+
+### Sending Messages
 
 ```javascript
 import Driver from './src/index.js';
 
-// Create driver with default configuration (127.0.0.1:49152)
-const driver = Driver.create();
+const driver = Driver.fromAddress('127.0.0.1:49152');
 await driver.initialize();
-
-// Send a message
-await driver.send('Hello, restor-octo-giggle server!');
+await driver.send('Hello from JS!');
 ```
 
-### Custom Address
+### Listening for Events
 
 ```javascript
-import Driver from './src/index.js';
-
-// Create driver with custom address
 const driver = Driver.fromAddress('127.0.0.1:49152');
 await driver.initialize();
 
-await driver.send('Custom address message');
-```
-
-### Full Configuration
-
-```javascript
-import Driver, { ProtocolType } from './src/index.js';
-
-const driver = Driver.withConfig({
-    protocol: ProtocolType.TCP,
-    host: '127.0.0.1',
-    port: 49152,
+// Start event listener
+await driver.startEventListener('127.0.0.1:9000', {
+    registrationAddress: '127.0.0.1:49153',
+    consumerId: 'my-consumer',
+    events: ['user_login', 'order_created']
 });
 
-await driver.initialize();
-await driver.send('Full config message');
-```
-
-## API Reference
-
-### Driver Class
-
-#### Constructor
-
-```javascript
-new Driver(config)
-```
-
-- `config`: `DriverConfig` object or plain object with:
-  - `protocol`: Protocol type (default: `ProtocolType.TCP`)
-  - `host`: Server hostname (default: `'127.0.0.1'`)
-  - `port`: Server port (default: `49152`)
-
-#### Methods
-
-##### `initialize()`
-
-Initialize the driver with the configured protocol.
-
-```javascript
-await driver.initialize();
-```
-
-##### `send(message)`
-
-Send a message to the server.
-
-```javascript
-await driver.send('Hello, server!');
-```
-
-- `message`: String message to send
-- Returns: `Promise<void>`
-- Throws: Error if sending fails
-
-##### `sendBatch(messages)`
-
-Send multiple messages sequentially.
-
-```javascript
-await driver.sendBatch([
-    'Message 1',
-    'Message 2',
-    'Message 3',
-]);
-```
-
-- `messages`: Array of message strings
-- Returns: `Promise<void>`
-
-##### `testConnection()`
-
-Test if the server is reachable.
-
-```javascript
-const isConnected = await driver.testConnection();
-console.log(isConnected); // true or false
-```
-
-- Returns: `Promise<boolean>`
-
-##### `getConfig()`
-
-Get the current driver configuration.
-
-```javascript
-const config = driver.getConfig();
-console.log(config.getAddress()); // "127.0.0.1:49152"
-```
-
-- Returns: `DriverConfig` object
-
-##### `isInitialized()`
-
-Check if the driver is initialized.
-
-```javascript
-if (driver.isInitialized()) {
-    // Driver is ready
-}
-```
-
-- Returns: `boolean`
-
-#### Static Methods
-
-##### `Driver.create()`
-
-Create a driver with default configuration.
-
-```javascript
-const driver = Driver.create();
-```
-
-##### `Driver.fromAddress(address)`
-
-Create a driver from an address string.
-
-```javascript
-const driver = Driver.fromAddress('127.0.0.1:49152');
-```
-
-- `address`: String in format `"host:port"`
-
-##### `Driver.withConfig(config)`
-
-Create a driver with full configuration.
-
-```javascript
-const driver = Driver.withConfig({
-    protocol: ProtocolType.TCP,
-    host: '127.0.0.1',
-    port: 49152,
+// Listen for events
+driver.on('user_login', (message, eventMessage) => {
+    console.log('User logged in:', message);
 });
 ```
 
-### DriverConfig Class
+## Features
 
-#### Methods
+- ✅ **Message Production** - Send messages to the transport bus
+- ✅ **Event Listening** - Listen for specific event messages
+- ✅ **Multiple Formats** - Support for JSON and simple format messages
+- ✅ **TCP Protocol** - Built-in TCP client implementation
+- ✅ **Zero Dependencies** - Uses only Node.js built-in modules
 
-##### `getAddress()`
+## Documentation
 
-Get the full address string.
+📚 **All documentation is in the [`docs/`](docs/) folder:**
 
-```javascript
-const address = config.getAddress(); // "127.0.0.1:49152"
-```
-
-#### Static Methods
-
-##### `DriverConfig.fromAddress(address)`
-
-Create config from address string.
-
-```javascript
-const config = DriverConfig.fromAddress('127.0.0.1:49152');
-```
-
-## Architecture
-
-The driver follows a similar architecture to the Rust server:
-
-```
-Driver
-    ↓
-ProtocolFactory.create(ProtocolType)
-    ↓
-TcpProtocol (or other protocol implementation)
-    ↓
-Node.js net.Socket
-    ↓
-Rust Server (127.0.0.1:49152)
-```
-
-## Protocol Implementation
-
-### TCP Protocol
-
-The TCP protocol uses Node.js built-in `net` module:
-
-- Creates a socket connection for each message
-- Sends message with newline terminator
-- Automatically closes connection after sending
-- Handles errors and timeouts
+- [Complete Documentation](docs/README.md) - Full driver documentation
+- [API Reference](docs/DOCUMENTATION.md) - Detailed API documentation
+- [Testing Guide](docs/README_TESTING.md) - Integration testing
+- [Quick Start Testing](docs/QUICK_START_TEST.md) - Quick test guide
+- [Structure](docs/STRUCTURE.md) - Code structure overview
 
 ## Examples
 
-See `example.js` for complete usage examples.
+- [Basic Example](example.js) - Simple message sending
+- [Event Listener Example](example-event-listener.js) - Event consumption
 
-### Simple Message Sending
+## Scripts
 
-```javascript
-import Driver from './src/driver.js';
-
-const driver = Driver.create();
-await driver.initialize();
-await driver.send('Hello, World!');
+```bash
+npm run example          # Run basic example
+npm run example:listener # Run event listener example
+npm test                 # Run integration tests
 ```
-
-### Batch Messages
-
-```javascript
-import Driver from './src/driver.js';
-
-const driver = Driver.create();
-await driver.initialize();
-
-await driver.sendBatch([
-    'PING',
-    'GET /status',
-    'SET value=42',
-]);
-```
-
-### Error Handling
-
-```javascript
-import Driver from './src/driver.js';
-
-const driver = Driver.create();
-
-try {
-    await driver.send('Hello!');
-} catch (error) {
-    console.error('Failed to send:', error.message);
-}
-```
-
-### Connection Testing
-
-```javascript
-import Driver from './src/driver.js';
-
-const driver = Driver.create();
-const isConnected = await driver.testConnection();
-
-if (isConnected) {
-    console.log('Server is reachable!');
-    await driver.send('Hello!');
-} else {
-    console.log('Server is not reachable. Make sure Rust server is running.');
-}
-```
-
-## Adding New Protocols
-
-To add a new protocol (e.g., UDP):
-
-1. **Implement the protocol class**:
-   ```javascript
-   // src/protocols/udp.js
-   export class UdpProtocol {
-       constructor(config) {
-           this.config = config;
-       }
-       
-       async send(message) {
-           // UDP implementation
-       }
-       
-       getProtocolName() {
-           return 'UDP';
-       }
-   }
-   ```
-
-2. **Add to ProtocolType**:
-   ```javascript
-   // src/config.js
-   export const ProtocolType = {
-       TCP: 'TCP',
-       UDP: 'UDP',
-   };
-   ```
-
-3. **Update ProtocolFactory**:
-   ```javascript
-   // src/protocol-factory.js
-   import { UdpProtocol } from './protocols/udp.js';
-   
-   switch (protocolType) {
-       case ProtocolType.TCP:
-           return new TcpProtocol(config);
-       case ProtocolType.UDP:
-           return new UdpProtocol(config);
-   }
-   ```
-
-## Requirements
-
-- Node.js 14+ (for ES modules support)
-- Rust Samples server running and accessible
-
-## Default Configuration
-
-- **Protocol**: TCP
-- **Host**: `127.0.0.1`
-- **Port**: `49152`
-
-These match the restor-octo-giggle Rust server's default configuration.
-
-## Troubleshooting
-
-### Connection Refused
-
-If you get connection errors:
-1. Ensure the Rust server is running
-2. Check the server address and port match
-3. Verify firewall settings allow connections
-
-### Timeout Errors
-
-If messages timeout:
-1. Check network connectivity
-2. Verify server is listening on the correct address
-3. Increase timeout in protocol implementation if needed
 
 ## License
 

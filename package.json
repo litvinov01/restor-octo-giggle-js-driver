@@ -5,7 +5,9 @@
   "type": "module",
   "main": "src/index.js",
   "scripts": {
-    "example": "node example.js"
+    "example": "node example.js",
+    "test": "node test-consumer-producer.js",
+    "example:listener": "node example-event-listener.js"
   },
   "keywords": [
     "transport",
